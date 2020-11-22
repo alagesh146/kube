@@ -1,0 +1,34 @@
+kubectl api-resources
+kubectl get service --sort-by=.metadata.name
+
+### sort by pod name
+
+kubectl get pods --sort-by=.metadata.name  --all-namespaces
+
+### sort by pod age
+kubectl get pods --sort-by=.metadata.creationTimestamp  --all-namespaces
+kubectl get pods --sort-by=.status.startTime  --all-namespaces
+
+# List pods Sorted by Restart Count
+kubectl get pods --sort-by='.status.containerStatuses[0].restartCount'  --all-namespaces
+
+
+########### metric server options ##############
+###### install metric server
+
+ git clone https://github.com/linuxacademy/metrics-server.git
+ kubectl apply -f metrics-server/deploy/1.8+/
+ 
+ or
+ 
+ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+ 
+ 
+   
+ ######### Sort by cpu  usage
+ 
+ kubectl top pod  --all-namespaces| sort -k3 -rn
+
+ ######### Sort by memory  usage
+ 
+ kubectl top pod  --all-namespaces| sort -k4 -rn
