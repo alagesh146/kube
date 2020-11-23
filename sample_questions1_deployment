@@ -61,3 +61,63 @@ kubectl get po -n web
 Use the following command to check if the probes were added to the pods:
 
 kubectl get po <pod_name> -o yaml -n web --export
+
+$ cat webapp.yaml
+#######################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: webapp
+  name: webapp
+  namespace: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webapp
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - image: linuxacademycontent/podofminerva:latest
+        name: podofminerva
+        resources: {}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+status: {}
+#######################################################
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: webapp
+  name: webapp
+  namespace: web
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+    nodePort: 30080
+  selector:
+    app: webapp
+  type: NodePort
+status:
+  loadBalancer: {}
+
+
+
+#######################################################
