@@ -122,3 +122,91 @@ Delete the pod named redispod
 Open the pod yaml and change the name of the pod to redispod2. Create the new pod with that YAML spec
 Connect to the redispod2 container and run the redis-cli from within the container. Run the command GET server:name to retrieve the keyspace that we set with the previous pod. The result will be "redis server", which means the data persisted from redispod to redispod2.
 Having persistent storage means that we can use that same volume with different pods in our Kubernetes cluster and access the same data.
+
+
+################### task 2 ###########################
+
+You have been given access to a two-node cluster. Within that cluster, a PersistentVolume has already been created. You must identify the size of the volume in order to make a PersistentVolumeClaim and mount the volume to your pod. Once you have created the PVC and mounted it to your running pod, you must copy the contents of /etc/passwd to the volume. Finally, you will delete the pod and create a new pod with the volume mounted in order to demonstrate the persistence of data. You must perform the following tasks in order to complete this hands-on lab:
+
+All objects should be in the web namespace.
+The PersistentVolumeClaim name should be data-pvc.
+The PVC request should be 256 MiB.
+The access mode for the PVC should be ReadWriteOnce.
+The storage class name should be local-storage.
+The pod name should be data-pod.
+The pod image should be busybox and the tag should be 1.28.
+The pod should request the PersistentVolumeClaim named data-pvc, and the volume name should be temp-data.
+The pod should mount the volume named temp-data to the /tmp/data directory.
+The name of the second pod should be data-pod2.
+
+################### task 2  solution ###########################
+
+# Use the following command to check if there is already a 'web' namespace:
+kubectl get ns
+kubectl get pv
+#Use the following command to create a PersistentVolumeClaim work from scratch or use a Kubernetes template file. Search the documentation :
+vi data-pvc.yaml #copy and paste from docs
+Update the file data-pvc.yaml with the following details:
+################################################################
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-pvc
+  namespace: web
+spec:
+  storageClassName: local-storage
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 256Mi
+################################################################
+
+# Use the following command to create the PVC:
+kubectl apply -f data-pvc.yaml
+
+# Create a pod mounting the volume and write data to the volume.
+# Use the following command to create the YAML for a busybox pod:
+kubectl run data-pod --image=busybox:1.28 --restart=Never -o yaml --dry-run -- /bin/sh -c 'sleep 3600' > data-pod.yaml
+
+# Use the following command to edit the data-pod.yaml file:
+vi data-pod.yaml
+Update the data-pod.yaml file as below:
+################################################################
+apiVersion: v1
+kind: Pod
+metadata:
+  name: data-pod
+  namespace: web
+spec:
+  containers:
+  - args:
+    - /bin/sh
+    - -c
+    - sleep 3600
+    image: busybox:1.28
+    name: data-pod
+    resources: {}
+    volumeMounts: 
+    - name: temp-data
+      mountPath: /tmp/data
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+  volumes: 
+  - name: temp-data
+    persistentVolumeClaim:
+      claimName: data-pvc
+ ################################################################     
+# Use the following command to create the pod:
+kubectl apply -f data-pod.yaml
+
+# Use the following command to connect to the pod:
+kubectl exec -it data-pod -n web -- sh
+
+#Use the following commands to confirm the environmant and to copy the contents of the etc/passwd file to /tmp/data:
+ls -la /etc/passwd
+ls -la /tmp/data/
+cp /etc/passwd /tmp/data/passwd
+
+# Use the following command to list the contents of /tmp/data:
+ls /tmp/data/
